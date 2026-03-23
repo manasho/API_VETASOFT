@@ -1,0 +1,75 @@
+/**
+ * Historial Medico Service - Migrado de Next.js a Express
+ */
+
+import { sql } from "../lib/db.js";
+
+export class HistorialMedicoService {
+  static async findAll(filters: {
+    animal_id?: string | null;
+    veterinario_id?: string | null;
+  }) {
+    const historial = await sql`
+      SELECT h.*, a.nombre as animal_nombre, cl.nombre as cliente_nombre,
+             u.nombre as veterinario_nombre, tc.nombre as tipo_consulta_nombre
+      FROM historial_medico h
+      LEFT JOIN animales a ON h.animal_id = a.animal_id
+      LEFT JOIN clientes cl ON a.cliente_id = cl.cliente_id
+      LEFT JOIN veterinarios v ON h.veterinario_id = v.veterinario_id
+      LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
+      LEFT JOIN tipo_consulta tc ON h.tipo_consulta_id = tc.tipo_consulta_id
+      WHERE (${filters.animal_id}::int IS NULL OR h.animal_id = ${filters.animal_id}::int)
+        AND (${filters.veterinario_id}::int IS NULL OR h.veterinario_id = ${filters.veterinario_id}::int)
+      ORDER BY h.fecha_consulta DESC
+    `;
+    return historial;
+  }
+
+  static async findById(id: string) {
+    const result = await sql`
+      SELECT h.*, a.nombre as animal_nombre, cl.nombre as cliente_nombre,
+             u.nombre as veterinario_nombre, tc.nombre as tipo_consulta_nombre
+      FROM historial_medico h
+      LEFT JOIN animales a ON h.animal_id = a.animal_id
+      LEFT JOIN clientes cl ON a.cliente_id = cl.cliente_id
+      LEFT JOIN veterinarios v ON h.veterinario_id = v.veterinario_id
+      LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
+      LEFT JOIN tipo_consulta tc ON h.tipo_consulta_id = tc.tipo_consulta_id
+      WHERE h.historial_id = ${id}
+    `;
+    return result[0] || null;
+  }
+
+  static async create(data: any) {
+    const result = await sql`
+      INSERT INTO historial_medico (
+        cita_id, animal_id, veterinario_id, tipo_consulta_id,
+        fecha_consulta, sintomas, diagnostico, tratamiento,
+        examenes_realizados, medicamentos, proxima_cita,
+        observaciones, peso, temperatura, frecuencia_cardiaca,
+        frecuencia_respiratoria, fecha_creacion
+      ) VALUES (
+        ${data.cita_id},
+        ${data.animal_id},
+        ${data.veterinario_id},
+        ${data.tipo_consulta_id},
+        ${data.fecha_consulta || null},
+        ${data.sintomas || null},
+        ${data.diagnostico},
+        ${data.tratamiento},
+        ${data.examenes_realizados || null},
+        ${data.medicamentos || null},
+        ${data.proxima_cita || null},
+        ${data.observaciones || null},
+        ${data.peso || null},
+        ${data.temperatura || null},
+        ${data.frecuencia_cardiaca || null},
+        ${data.frecuencia_respiratoria || null},
+        NOW()
+      )
+      RETURNING *
+    `;
+    return result[0];
+  }
+
+}
