@@ -1,5 +1,5 @@
 /**
- * Citas Service - Migrado de Next.js a Express
+ * Citas Service - Express
  */
 
 import { sql } from "../lib/db.js";
@@ -21,14 +21,12 @@ export class CitasService {
         cl.nombre as cliente_nombre,
         cl.telefono as cliente_telefono,
         u.nombre as veterinario_nombre,
-        tc.nombre as tipo_consulta_nombre,
         ec.estado_nombre
       FROM citas c
       LEFT JOIN animales a ON c.animal_id = a.animal_id
       LEFT JOIN clientes cl ON a.cliente_id = cl.cliente_id
       LEFT JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
-      LEFT JOIN tipo_consulta tc ON c.tipo_consulta_id = tc.tipo_consulta_id
       LEFT JOIN estado_citas ec ON c.estado_id = ec.estado_id
       WHERE (${filters.veterinario_id}::int IS NULL OR c.veterinario_id = ${filters.veterinario_id}::int)
         AND (${filters.estado_id}::int IS NULL OR c.estado_id = ${filters.estado_id}::int)
@@ -53,8 +51,6 @@ export class CitasService {
         cl.telefono as cliente_telefono,
         cl.correo as cliente_correo,
         u.nombre as veterinario_nombre,
-        tc.nombre as tipo_consulta_nombre,
-        tc.costo as tipo_consulta_costo,
         ec.estado_nombre,
         r.nombre_raza,
         e.nombre_especie
@@ -65,7 +61,6 @@ export class CitasService {
       LEFT JOIN especies e ON r.especie_id = e.especie_id
       LEFT JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
-      LEFT JOIN tipo_consulta tc ON c.tipo_consulta_id = tc.tipo_consulta_id
       LEFT JOIN estado_citas ec ON c.estado_id = ec.estado_id
       WHERE c.cita_id = ${id}
     `;
@@ -78,12 +73,11 @@ export class CitasService {
   static async create(data: any) {
     const result = await sql`
       INSERT INTO citas (
-        animal_id, veterinario_id, tipo_consulta_id, fecha_cita,
+        animal_id, veterinario_id, fecha_cita,
         motivo, estado_id, observaciones, fecha_creacion, creado_por
       ) VALUES (
         ${data.animal_id}, 
         ${data.veterinario_id}, 
-        ${data.tipo_consulta_id},
         ${data.fecha_cita}, 
         ${data.motivo || null}, 
         ${data.estado_id}, 

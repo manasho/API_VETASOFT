@@ -29,6 +29,8 @@ import donacionesRoutes from "./routes/donaciones.routes.js";
 import solicitudesAdopcionRoutes from "./routes/solicitudes-adopcion.routes.js";
 import catalogosRoutes from "./routes/catalogos.routes.js";
 import healthRoutes from "./routes/health.routes.js";
+import modulosRoutes from "./routes/modulos.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -85,6 +87,12 @@ app.use("/api/solicitudes-adopcion", solicitudesAdopcionRoutes);
 // Catálogos (roles, estados, tipos)
 app.use("/api/catalogos", catalogosRoutes);
 
+// Módulos por Rol (RBAC - frontend usa /api/modulos/mis-modulos)
+app.use("/api/modulos", modulosRoutes);
+
+// Notificaciones (campana)
+app.use("/api/notificaciones", notificacionesRoutes);
+
 // Ruta raíz - Documentación de la API
 app.get("/", (req, res) => {
   res.json({
@@ -121,6 +129,20 @@ app.get("/", (req, res) => {
       },
       adopciones: {
         solicitudes: "/api/solicitudes-adopcion",
+      },
+      modulos: {
+        misModulos: "GET /api/modulos/mis-modulos",
+        todos: "GET /api/modulos (admin)",
+        porRol: "GET /api/modulos/rol/:rolId (admin)",
+        asignar: "POST /api/modulos/rol/:rolId/:moduloId (admin)",
+        remover: "DELETE /api/modulos/rol/:rolId/:moduloId (admin)",
+      },
+      notificaciones: {
+        listar: "GET /api/notificaciones",
+        contador: "GET /api/notificaciones/contador",
+        leerTodas: "PATCH /api/notificaciones/leer-todas",
+        leerUna: "PATCH /api/notificaciones/:id/leer",
+        eliminar: "DELETE /api/notificaciones/:id",
       },
       health: "GET /api/health",
     },

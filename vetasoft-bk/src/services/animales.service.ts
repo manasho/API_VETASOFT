@@ -23,8 +23,7 @@ export class AnimalesService {
       LEFT JOIN clientes c ON a.cliente_id = c.cliente_id
       LEFT JOIN razas r ON a.raza_id = r.raza_id
       LEFT JOIN especies e ON r.especie_id = e.especie_id
-      WHERE a.activo = true
-        AND (${filters.cliente_id}::int IS NULL OR a.cliente_id = ${filters.cliente_id}::int)
+      WHERE (${filters.cliente_id}::int IS NULL OR a.cliente_id = ${filters.cliente_id}::int)
         AND (${filters.estado}::text IS NULL OR a.estado::text = ${filters.estado}::text)
       ORDER BY a.fecha_ingreso DESC
     `;
@@ -53,13 +52,13 @@ export class AnimalesService {
     if (animals.length === 0) return null;
 
     const historial = await sql`
-      SELECT h.*, u.nombre as veterinario_nombre, tc.nombre as tipo_consulta_nombre
+      SELECT h.*, u.nombre as veterinario_nombre
       FROM historial_medico h
-      LEFT JOIN veterinarios vet ON h.veterinario_id = vet.veterinario_id
+      LEFT JOIN citas c ON h.cita_id = c.cita_id
+      LEFT JOIN veterinarios vet ON c.veterinario_id = vet.veterinario_id
       LEFT JOIN usuarios u ON vet.usuario_id = u.usuario_id
-      LEFT JOIN tipo_consulta tc ON h.tipo_consulta_id = tc.tipo_consulta_id
-      WHERE h.animal_id = ${id}
-      ORDER BY h.fecha_consulta DESC LIMIT 10
+      WHERE c.animal_id = ${id}
+      ORDER BY h.fecha_creacion DESC LIMIT 10
     `;
 
     const vacunas = await sql`
@@ -86,7 +85,7 @@ export class AnimalesService {
     const result = await sql`
       INSERT INTO animales (
         nombre, raza_id, cliente_id, edad, fecha_nacimiento, 
-        peso, sexo, descripcion, estado, activo, fecha_ingreso
+        peso, sexo, descripcion, estado, fecha_ingreso
       ) VALUES (
         ${data.nombre}, 
         ${data.raza_id}, 
@@ -96,8 +95,7 @@ export class AnimalesService {
         ${data.peso || null}, 
         ${data.sexo}, 
         ${data.descripcion || ""}, 
-        ${data.estado || "Activo"}, 
-        true, 
+        ${data.estado || "Animales"}, 
         NOW()
       )
       RETURNING *
