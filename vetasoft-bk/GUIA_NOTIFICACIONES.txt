@@ -1,0 +1,117 @@
+====================================================================
+  GUÍA DE APRENDIZAJE: NOTIFICACIONES PUSH Y CRON JOBS (VETASOFT)
+====================================================================
+
+Esta guía te servirá como mapa de ruta para implementar exitosamente 
+las notificaciones al celular (Push Notifications) y la automatización 
+diaria de recordatorios de citas en tu proyecto VetaSoft.
+
+CONCEPTOS CLAVE:
+----------------
+Toda la lógica "pesada" vive en el backend (Express/Node.js). El celular 
+(Flutter) se limita a dos cosas: proporcionar un ID único (FCM Token) 
+y mostrar en pantalla lo que Firebase le envíe.
+
+El texto de la notificación: "Hola Juan, tu cita de peluquería es a las 8"
+DEBE CONSTRUIRSE EN EL BACKEND EXCLUSIVAMENTE.
+
+
+====================================================================
+FASE 1: DOMINAR EL CRON JOB (BACKEND NODE.JS)
+====================================================================
+Objetivo: Lograr que tu servidor ejecute código automáticamente a 
+una hora específica cada día, sin que nadie presione un botón.
+
+Día 1:
+  - Estudia la librería "node-cron".
+  - Instálala en Vetasoft (`npm install node-cron`).
+  - Escribe tu primer Cron Job básico en `src/index.ts` que solo 
+    imprima `console.log("Revisando citas...")` todos los días a 
+    las 8:00 AM. 
+    (Patrón cron: '0 8 * * *')
+
+Día 2:
+  - Crea una función en `citas.service.ts` que haga un `SELECT` en 
+    la base de datos buscando citas cuya fecha sea MAÑANA 
+    (`fecha_cita = CURRENT_DATE + 1`).
+  - Llama a esa función desde tu Cron Job.
+  - Recorre las citas encontradas con un ciclo `for`.
+  - Construye el mensaje: 
+    const mensaje = `Hola ${cita.cliente_nombre}, tu cita de ${cita.motivo} es mañana.`;
+
+Día 3:
+  - Por cada cita recorrida en el paso anterior, inserta el mensaje 
+    en la tabla `notificaciones` usando tu `NotificacionesService.crear()`.
+  - Con esto, la "Campanita" de la web/app ya funcionará.
+
+
+====================================================================
+FASE 2: LA INFRAESTRUCTURA FIREBASE (NUBE)
+====================================================================
+Objetivo: Preparar el intermediario gratuito que Google provee 
+para despertar los teléfonos celulares (Firebase Cloud Messaging).
+
+Día 4:
+  - Ve a la consola web de Firebase y crea un proyecto gratuito.
+  - Entra a los ajustes de tu nuevo proyecto y busca la sección 
+    de "Cloud Messaging" y "Cuentas de Servicio" (Service Accounts).
+  - Descarga el archivo JSON con las llaves de seguridad.
+
+Día 5:
+  - Instala en el backend: `npm install firebase-admin`.
+  - Inicializa Firebase Admin usando el archivo JSON que descargaste.
+  - Estudia cómo enviar un mensaje de prueba con `firebaseAdmin.messaging().send()`.
+
+
+====================================================================
+FASE 3: EL FRONTEND (APP EN FLUTTER)
+====================================================================
+Objetivo: Conectar la aplicación móvil al servicio de Firebase para 
+que pueda recibir los mensajes.
+
+Día 6:
+  - Sigue la guía oficial de "FlutterFire" para vincular tu app de 
+    Flutter con el proyecto de Firebase del Día 4.
+  - Agrega el paquete `firebase_messaging` en Flutter.
+
+Día 7:
+  - Programa en Flutter la solicitud de permisos (preguntarle al usuario 
+    si desea recibir notificaciones).
+  - Imprime en consola el "FCM Token" (el identificador único de ese teléfono).
+
+Día 8:
+  - Crea un endpoint en tu backend (`PUT /api/usuarios/fcm-token`).
+  - En Flutter, al iniciar sesión, envía el FCM Token a este endpoint.
+  - Tu backend debe guardar ese string en la tabla `usuarios` (vas a 
+    tener que crear una columna nueva llamada `fcm_token` tipo VARCHAR).
+
+
+====================================================================
+FASE 4: JUNTANDO LAS PIEZAS DIRECTAMENTE AL TELÉFONO
+====================================================================
+Objetivo: Conectar el Cron Job con el envío real al teléfono.
+
+Día 9:
+  - Vuelve a tu código del Cron Job (Día 3). 
+  - Justo después de guardar la notificación en la base de datos (la campanita), 
+    añade el código de Firebase Admin (Día 5).
+  - Utiliza el `fcm_token` guardado en el paso anterior para indicarle 
+    a Firebase a qué teléfono específico enviarle el aviso.
+
+FLUJO FINAL DE TU SISTEMA:
+1. Son las 8:00 AM. El servidor despierta (Cron Job).
+2. Lee la Base de Datos: Hay 1 cita mañana para "Juan".
+3. Busca el FCM Token de "Juan" en la BD.
+4. Construye el mensaje "Hola Juan, tu cita...".
+5. Guarda en la tabla `notificaciones` (Campanita activada).
+6. Le envía el mensaje al Token de Juan usando Firebase.
+7. El teléfono de Juan suena en su bolsillo.
+
+
+--------------------------------------------------------------------
+TÉRMINOS PARA BUSCAR EN YOUTUBE / GOOGLE (Tus mejores amigos):
+- "Aprender node-cron en Node.js Express"
+- "Push Notifications con Firebase Admin SDK Node.js"
+- "Push Notifications Flutter (FlutterFire) Tutorial 2024"
+- "Guardar FCM Token del usuario en base de datos"
+====================================================================

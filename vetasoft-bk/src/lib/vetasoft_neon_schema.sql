@@ -100,6 +100,7 @@ CREATE TABLE animales (
   descripcion     TEXT NOT NULL,
   numero_chip     VARCHAR(50),
   estado          estado_animal DEFAULT 'Animales',
+  activo          BOOLEAN DEFAULT TRUE,
   fecha_ingreso   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
