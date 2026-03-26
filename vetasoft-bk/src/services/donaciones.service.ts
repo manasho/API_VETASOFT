@@ -36,9 +36,11 @@ export class DonacionesService {
 
   static async create(data: any) {
     const result = await sql`
-      INSERT INTO donaciones (campana_id, monto, nombre_donante, correo_donante, telefono_donante)
+      INSERT INTO donaciones (campana_id, monto, nombre_donante, correo_donante, telefono_donante, metodo_pago, numero_transaccion, observaciones, anonimo)
       VALUES (${data.campana_id}, ${data.monto}, ${data.nombre_donante}, 
-              ${data.correo_donante || null}, ${data.telefono_donante || null})
+              ${data.correo_donante || null}, ${data.telefono_donante || null},
+              ${data.metodo_pago || null}, ${data.numero_transaccion || null},
+              ${data.observaciones || null}, ${data.anonimo || false})
       RETURNING *
     `;
     return result[0];

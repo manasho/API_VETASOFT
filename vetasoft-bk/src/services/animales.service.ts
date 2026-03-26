@@ -85,7 +85,7 @@ export class AnimalesService {
     const result = await sql`
       INSERT INTO animales (
         nombre, raza_id, cliente_id, edad, fecha_nacimiento, 
-        peso, sexo, descripcion, estado, fecha_ingreso
+        peso, sexo, descripcion, numero_chip, estado, fecha_ingreso
       ) VALUES (
         ${data.nombre}, 
         ${data.raza_id}, 
@@ -95,6 +95,7 @@ export class AnimalesService {
         ${data.peso || null}, 
         ${data.sexo}, 
         ${data.descripcion || ""}, 
+        ${data.numero_chip || null}, 
         ${data.estado || "Animales"}, 
         NOW()
       )
@@ -111,6 +112,7 @@ export class AnimalesService {
         cliente_id = COALESCE(${data.cliente_id}, cliente_id),
         fecha_nacimiento = COALESCE(${data.fecha_nacimiento}, fecha_nacimiento),
         sexo = COALESCE(${data.sexo}, sexo),
+        numero_chip = COALESCE(${data.numero_chip}, numero_chip),
         estado = COALESCE(${data.estado}, estado),
         descripcion = COALESCE(${data.descripcion}, descripcion)
       WHERE animal_id = ${id}

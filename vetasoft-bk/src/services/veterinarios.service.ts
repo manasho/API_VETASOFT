@@ -28,10 +28,10 @@ export class VeterinariosService {
 
   static async create(data: any) {
     const result = await sql`
-      INSERT INTO veterinarios (usuario_id, numero_licencia, especialidad)
+      INSERT INTO veterinarios (usuario_id, numero_licencia, especialidad, fecha_contratacion, horario_inicio, horario_fin)
       VALUES (${data.usuario_id}, ${data.numero_licencia || null}, ${
       data.especialidad || null
-    })
+    }, ${data.fecha_contratacion || null}, ${data.horario_inicio || null}, ${data.horario_fin || null})
       RETURNING *
     `;
     return result[0];
@@ -42,7 +42,10 @@ export class VeterinariosService {
       UPDATE veterinarios SET
         usuario_id = COALESCE(${data.usuario_id}, usuario_id),
         numero_licencia = COALESCE(${data.numero_licencia}, numero_licencia),
-        especialidad = COALESCE(${data.especialidad}, especialidad)
+        especialidad = COALESCE(${data.especialidad}, especialidad),
+        fecha_contratacion = COALESCE(${data.fecha_contratacion}, fecha_contratacion),
+        horario_inicio = COALESCE(${data.horario_inicio}, horario_inicio),
+        horario_fin = COALESCE(${data.horario_fin}, horario_fin)
       WHERE veterinario_id = ${id}
       RETURNING *
     `;
