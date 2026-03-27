@@ -1,0 +1,77 @@
+GUÍA DE IMPLEMENTACIÓN DE MÓDULOS (RBAC) PARA FRONTEND (REACT Y FLUTTER)
+========================================================================
+
+Esta guía explica cómo implementar el sistema de roles y módulos (RBAC)
+en las aplicaciones cliente (Web con React y Móvil con Flutter) de Vetasoft.
+
+FLUJO PRINCIPAL DE FUNCIONAMIENTO
+---------------------------------
+1. LOGIN: El usuario (sea Cliente, Admin o Médico) inicia sesión en React o Flutter.
+2. PETICIÓN API: Tras un login exitoso, el Frontend solicita al Backend los módulos permitidos para el rol de ese usuario.
+3. RESPUESTA: El Backend busca en la BD y devuelve un JSON (Lista/Array) EXCLUSIVAMENTE con los módulos a los que el usuario tiene acceso.
+4. RENDERIZADO VISUAL: 
+   - React (Web): Usa el arreglo JSON proveniente del backend y mediante un bucle como `.map()` dibuja dinámicamente el Menú Lateral (Sidebar).
+   - Flutter (Móvil): Usa el arreglo JSON y mediante un `ListView.builder` dibuja el menú de hamburguesa (Drawer) o una barra de navegación inferior.
+   - El Frontend NO debe tener ningún menú o botón de acceso "quemado" en el código duro. Todo se construye leyendo el JSON.
+
+========================================================================
+¡IMPORTANTE! SINCRONIZACIÓN DE BASE DE DATOS Y FRONTEND
+========================================================================
+No basta con programar la pantalla en Flutter o React. Todo nuevo 
+módulo o cambio de pantalla DEBE estar registrado en la tabla `modulos`
+de PostgreSQL, y se le debe dar permisos con `roles_modulos`. 
+
+Si el equipo Frontend hace un módulo nuevo pero no avisa para que se 
+inserte en la base de datos, el módulo será INVISIBLE porque el backend 
+jamás lo enviará en el JSON de respuesta.
+
+REGLA DE ORO SOBRE LA "RUTA" EXACTA (Respondiendo a tu duda)
+------------------------------------------------------------
+La respuesta a tu pregunta es un SÍ ROTUNDO. El campo `ruta` que guardes
+en la Base de Datos debe coincidir EXACTITUD MILIMÉTRICA con el nombre
+de la ruta que declaraste en tu código Frontend.
+
+Ejemplo:
+- Si tu programador de React configuró el enrutador así: `<Route path="/register777" />`
+- Si tu programador de Flutter usa: `Navigator.pushNamed(context, '/register777')`
+
+ENTONCES, el campo `ruta` de la tabla `modulos` en la BD debe decir 
+obligatoriamente: `/register777`
+
+¿Por qué? Porque el menú en el frontend es "ciego". Al hacer clic, 
+tomará el texto exacto que mandó la BD y se lo pasará al navegador.
+Si en la BD dice `/registrar` pero tu código de Flutter esperaba
+`/register777`, la aplicación colapsará y mostrará una 
+"PANTALLA NO ENCONTRADA" (Error 404).
+
+========================================================================
+EJEMPLO RÁPIDO PARA LOS PROGRAMADORES:
+========================================================================
+
+El Backend envía esto:
+[
+  { "nombre": "Registro Animal", "icono": "paw", "ruta": "/register777" }
+]
+
+CÓDIGO REACT:
+{modulosDelBackend.map((mod) => (
+  <Link to={mod.ruta}> 
+     <i className={mod.icono} /> {mod.nombre} 
+  </Link>
+))}
+
+CÓDIGO FLUTTER:
+ListView.builder(
+  itemCount: modulosDelBackend.length,
+  itemBuilder: (context, index) {
+    var mod = modulosDelBackend[index];
+    return ListTile(
+      leading: Icon( IconsUtils.get(mod.icono) ),
+      title: Text(mod.nombre),
+      onTap: () {
+        // Usa la ruta devuelta por el backend literalmente
+        Navigator.pushNamed(context, mod.ruta); 
+      },
+    );
+  }
+)
