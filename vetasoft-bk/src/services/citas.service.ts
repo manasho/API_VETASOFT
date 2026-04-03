@@ -125,8 +125,8 @@ static async getCitasManana() {
   const citas = await sql`
     SELECT 
       c.cita_id,
+      c.animal_id,
       c.fecha_cita,
-      c.hora_inicio,
       c.motivo,
       a.nombre as animal_nombre,
       cl.nombre as cliente_nombre,
@@ -138,8 +138,8 @@ static async getCitasManana() {
     JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
     JOIN usuarios u ON v.usuario_id = u.usuario_id
     WHERE c.fecha_cita::date = (CURRENT_DATE + INTERVAL '1 day')::date
-      AND c.estado_id = 1 -- Solo citas confirmadas (ajustar según tu estado)
-    ORDER BY c.hora_inicio
+      AND c.estado_id = 1
+    ORDER BY c.fecha_cita
   `;
   return citas;
 }
