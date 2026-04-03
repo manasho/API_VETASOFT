@@ -117,4 +117,30 @@ export class CitasService {
     `;
     return cancelledCita.length > 0 ? cancelledCita[0] : null;
   }
+
+  /**
+ * Obtener citas para mañana
+ */
+static async getCitasManana() {
+  const citas = await sql`
+    SELECT 
+      c.cita_id,
+      c.fecha_cita,
+      c.hora_inicio,
+      c.motivo,
+      a.nombre as animal_nombre,
+      cl.nombre as cliente_nombre,
+      cl.telefono as cliente_telefono,
+      u.nombre as veterinario_nombre
+    FROM citas c
+    JOIN animales a ON c.animal_id = a.animal_id
+    JOIN clientes cl ON a.cliente_id = cl.cliente_id
+    JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
+    JOIN usuarios u ON v.usuario_id = u.usuario_id
+    WHERE c.fecha_cita::date = (CURRENT_DATE + INTERVAL '1 day')::date
+      AND c.estado_id = 1 -- Solo citas confirmadas (ajustar según tu estado)
+    ORDER BY c.hora_inicio
+  `;
+  return citas;
+}
 }
