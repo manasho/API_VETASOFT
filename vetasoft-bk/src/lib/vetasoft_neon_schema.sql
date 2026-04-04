@@ -49,13 +49,16 @@ CREATE TABLE clientes (
   documento_id     VARCHAR(50) NOT NULL UNIQUE,
   fecha_registro   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   activo           BOOLEAN DEFAULT TRUE,
-  empleado_id      INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL
+  empleado_id      INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL,
+  usuario_id       INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL  -- cuenta de acceso del cliente (agregado 2026-04-03)
 );
 
 CREATE INDEX idx_clientes_empleado   ON clientes(empleado_id);
 CREATE INDEX idx_clientes_documento  ON clientes(documento_id);
 CREATE INDEX idx_clientes_activo     ON clientes(activo);
 CREATE INDEX idx_clientes_nombre     ON clientes(nombre);
+CREATE INDEX idx_clientes_usuario    ON clientes(usuario_id);  -- agregado 2026-04-03
+
 
 -- ─────────────────────────────────────────────────────────────
 -- 4. ESPECIES

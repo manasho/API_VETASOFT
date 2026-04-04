@@ -24,21 +24,37 @@ export const ejecutarRevisionCitas = async () => {
     // 2. Procesar cada cita
     for (const cita of citas) {
         const fecha = new Date(cita.fecha_cita).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-        const mensaje = `Recordatorio: Tienes una cita de ${cita.motivo} mañana a las ${fecha}.`;
 
-        // Buscar usuario responsable (dueño del animal)
-        const usuario = await UsuariosService.getUsuarioByAnimal(cita.animal_id);
+        // ── Notificación al CLIENTE (dueño del animal) ──────────────────
+        // Solo funciona si el cliente tiene cuenta en 'usuarios' con el mismo correo
+        const usuarioCliente = await UsuariosService.getUsuarioByAnimal(cita.animal_id);
 
-        if (usuario) {
-            // 3. Guardar notificación en la base de datos
+        if (usuarioCliente) {
+            const mensajeCliente = `Recordatorio: Tu mascota ${cita.animal_nombre} tiene una cita de ${cita.motivo} mañana a las ${fecha}.`;
             await NotificacionesService.crear({
-                usuario_id: usuario.usuario_id,
-                titulo: 'Recordatorio de Cita',
-                mensaje: mensaje,
+                usuario_id: usuarioCliente.usuario_id,
+                titulo: 'Recordatorio de Cita - Tu Mascota',
+                mensaje: mensajeCliente,
                 tipo: 'info',
             });
+            console.info(`🔔 Notificación enviada al cliente (usuario_id: ${usuarioCliente.usuario_id} - ${usuarioCliente.nombre})`);
+            notificacionesCreadas++;
+        } else {
+            console.info(`⚠️  Animal ${cita.animal_id} (${cita.animal_nombre}): el cliente no tiene cuenta de usuario, sin notificación de cliente.`);
+        }
 
-            console.info(`🔔 Notificación creada para usuario ${usuario.usuario_id}`);
+        // ── Notificación al VETERINARIO ─────────────────────────────────
+        const usuarioVet = await UsuariosService.findById(cita.veterinario_usuario_id);
+
+        if (usuarioVet) {
+            const mensajeVet = `Recordatorio: Tienes una cita de ${cita.motivo} mañana a las ${fecha} con ${cita.animal_nombre} (dueño: ${cita.cliente_nombre}).`;
+            await NotificacionesService.crear({
+                usuario_id: usuarioVet.usuario_id,
+                titulo: 'Recordatorio de Cita Programada',
+                mensaje: mensajeVet,
+                tipo: 'info',
+            });
+            console.info(`🔔 Notificación enviada al veterinario (usuario_id: ${usuarioVet.usuario_id} - ${usuarioVet.nombre})`);
             notificacionesCreadas++;
         }
     }

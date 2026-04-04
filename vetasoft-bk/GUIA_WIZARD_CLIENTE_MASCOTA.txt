@@ -1,0 +1,238 @@
+================================================================
+ VETASOFT - GUIA: FLUJO WIZARD REGISTRO CLIENTE + MASCOTA
+ Para el equipo de desarrollo Frontend
+================================================================
+Fecha: Abril 2026
+
+
+================================================================
+ CONCEPTO: ¿QUE ES UN WIZARD / STEPPER?
+================================================================
+
+Un Wizard (o Stepper) es un formulario dividido en PASOS.
+El usuario avanza de pantalla en pantalla, y entre pasos se
+guardan datos en memoria (sin que el usuario los vea).
+
+Ejemplo real: cuando compras en una tienda online:
+  Paso 1: Datos personales
+  Paso 2: Dirección de envío
+  Paso 3: Método de pago
+  Paso 4: Confirmar pedido
+
+En VetSoft aplicamos este mismo concepto para registrar
+un cliente y su mascota en una sola sesión.
+
+
+================================================================
+ EL FLUJO COMPLETO
+================================================================
+
+┌─────────────────────────────────────────────────┐
+│                PASO 1 DE 3                       │
+│            Datos del Cliente                     │
+│  ●──────────────○──────────────○                │
+│                                                  │
+│  Nombre:    [Juan Pérez              ]           │
+│  Documento: [123456789              ]            │
+│  Correo:    [juan@email.com         ]            │
+│  Teléfono:  [3001234567             ]            │
+│  Dirección: [Calle 123 #45-67       ]            │
+│                                                  │
+│                        [ Siguiente → ]           │
+└─────────────────────────────────────────────────┘
+
+  Al hacer click en "Siguiente":
+  → El frontend llama: POST /api/clientes/registro-completo
+  → El backend crea el USUARIO y el CLIENTE automáticamente
+  → El backend responde con cliente_id: 17
+  → El frontend GUARDA ESE 17 EN MEMORIA (el usuario no lo ve)
+  → El frontend avanza al Paso 2
+
+═══════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────┐
+│                PASO 2 DE 3                       │
+│         Mascota de Juan Pérez                    │
+│  ✓──────────────●──────────────○                │
+│                                                  │
+│  Nombre mascota: [Matías              ]          │
+│  Especie:        [Perro ▼             ]          │
+│  Raza:           [Labrador ▼          ]          │
+│  Edad:           [3 años              ]          │
+│  Peso (kg):      [12.5                ]          │
+│  Sexo:           [Macho ▼             ]          │
+│  Descripción:    [Perro café amigable ]          │
+│                                                  │
+│  [ ← Atrás ]              [ Guardar ✓ ]          │
+└─────────────────────────────────────────────────┘
+
+  Al hacer click en "Guardar":
+  → El frontend toma el cliente_id: 17 que guardó antes
+  → Llama: POST /api/animales con { cliente_id: 17, nombre: "Matías", ... }
+  → El backend registra la mascota vinculada al cliente
+  → El backend responde con animal_id: 5
+  → El frontend avanza al Paso 3
+
+═══════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────┐
+│                PASO 3 DE 3                       │
+│            ¡Registro Exitoso!                    │
+│  ✓──────────────✓──────────────●                │
+│                                                  │
+│   ✅ Cliente Juan Pérez registrado               │
+│   ✅ Mascota Matías registrada                   │
+│                                                  │
+│   Credenciales del cliente:                      │
+│   Correo:     juan@email.com                     │
+│   Contraseña: 123456789 (su número de documento) │
+│   ⚠ Recuerde indicarle que cambie la clave       │
+│                                                  │
+│  [ Registrar otro ]    [ Ver perfil del cliente ]│
+└─────────────────────────────────────────────────┘
+
+
+================================================================
+ COMO FUNCIONA EL ID EN MEMORIA (punto clave)
+================================================================
+
+La clave del wizard es que el frontend GUARDA EL ID entre pasos.
+Nadie lo escribe, nadie lo ve. El sistema lo maneja solo.
+
+  PASO 1: usuario llena datos del cliente
+          → backend crea cliente y devuelve: { cliente_id: 17 }
+          → frontend guarda en memoria: clienteId = 17
+
+  PASO 2: usuario llena datos de la mascota
+          → frontend agrega automáticamente: cliente_id: 17
+          → backend recibe: { nombre: "Matías", cliente_id: 17, ... }
+          → backend guarda la mascota vinculada a Juan
+
+En React esto se maneja con useState():
+
+  const [clienteId, setClienteId] = useState(null);
+
+  // Al terminar paso 1:
+  setClienteId(data.cliente.cliente_id);  // guarda 17
+
+  // Al enviar paso 2:
+  { ...datosMascota, cliente_id: clienteId }  // agrega 17 automático
+
+
+================================================================
+ ENDPOINTS QUE SE USAN EN EL WIZARD
+================================================================
+
+PASO 1 → POST /api/clientes/registro-completo
+  Body:
+  {
+    "nombre":          "Juan Pérez",
+    "correo":          "juan@email.com",
+    "documento_id":    "123456789",     ← se usa como contraseña inicial
+    "telefono":        "3001234567",
+    "direccion":       "Calle 123",
+    "fecha_nacimiento":"1990-05-15"
+  }
+
+  Respuesta:
+  {
+    "success": true,
+    "data": {
+      "usuario":  { "usuario_id": 26, "nombre": "Juan Pérez", ... },
+      "cliente":  { "cliente_id": 17, "nombre": "Juan Pérez", ... },
+      "contrasena_inicial": "123456789",
+      "mensaje": "Contraseña inicial: número de documento"
+    }
+  }
+
+  → GUARDAR: data.cliente.cliente_id = 17
+
+
+PASO 2 → POST /api/animales
+  Body:
+  {
+    "nombre":          "Matías",
+    "cliente_id":      17,            ← viene del paso anterior (memoria)
+    "raza_id":         2,             ← obtenido de GET /api/razas
+    "edad":            3,
+    "peso":            12.5,
+    "sexo":            "Macho",
+    "descripcion":     "Perro café amigable"
+  }
+
+  Respuesta:
+  {
+    "success": true,
+    "data": { "animal_id": 5, "nombre": "Matías", "cliente_id": 17, ... }
+  }
+
+
+EXTRA → GET /api/razas
+  Usar esta llamada para llenar el dropdown de razas en el Paso 2.
+  Respuesta: lista de razas con raza_id y nombre_especie
+
+
+================================================================
+ RELACIONES EN LA BASE DE DATOS
+================================================================
+
+  usuarios (usuario_id=26, nombre="Juan", rol=Cliente)
+      ↑ usuario_id
+  clientes (cliente_id=17, nombre="Juan", documento_id="123456789")
+      ↑ cliente_id
+  animales (animal_id=5, nombre="Matías", cliente_id=17)
+
+  El animal pertenece al cliente.
+  El cliente tiene una cuenta de usuario.
+  La cadena permite enviar notificaciones al dueño de la mascota.
+
+
+================================================================
+ CONTRASENA POR DEFECTO
+================================================================
+
+Cuando se registra un cliente desde el wizard:
+  - El backend crea automáticamente su cuenta de usuario
+  - La contraseña inicial = su número de documento
+  - El recepcionista debe informarle al cliente
+
+El cliente puede cambiar su contraseña desde:
+  - La app móvil
+  - El portal web
+
+Endpoint para cambiar contraseña (pendiente de implementar):
+  PUT /api/auth/cambiar-contrasena
+  Body: { contrasena_actual: "...", contrasena_nueva: "..." }
+
+
+================================================================
+ SI EL CLIENTE LLEGA SIN MASCOTA
+================================================================
+
+Si el cliente viene solo a registrarse (sin mascota por ahora):
+  - Solo ejecutar el Paso 1
+  - Omitir el Paso 2
+  - Más adelante se puede agregar la mascota desde su perfil
+
+
+================================================================
+ SI EL CLIENTE YA EXISTE Y QUIERE AGREGAR MASCOTA
+================================================================
+
+  1. Buscar al cliente: GET /api/clientes?nombre=Juan
+     → obtener su cliente_id
+  2. Registrar la mascota: POST /api/animales { cliente_id: ..., ... }
+
+
+================================================================
+ RESUMEN PARA EL EQUIPO
+================================================================
+
+  1. Un formulario tipo WIZARD tiene 2-3 pasos en la misma pantalla
+  2. El cliente_id se guarda en el estado de React entre pasos
+  3. El backend recibe cliente_id en el POST /api/animales
+  4. Nunca se usa el correo para vincular tablas, siempre IDs
+  5. La contraseña inicial del cliente es su número de documento
+  6. El wizard tiene un botón "Volver" por si hay errores
+
+================================================================

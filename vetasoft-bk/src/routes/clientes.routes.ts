@@ -41,6 +41,34 @@ router.get("/:id", authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/clientes/registro-completo
+ * Crea usuario (rol Cliente) + cliente en una sola operación.
+ * La contraseña por defecto es el número de documento del cliente.
+ */
+router.post("/registro-completo", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { nombre, correo, documento_id, telefono, direccion, fecha_nacimiento, empleado_id } = req.body;
+
+    if (!nombre || !correo || !documento_id) {
+      res.status(400).json({
+        success: false,
+        error: "Los campos nombre, correo y documento_id son obligatorios",
+      });
+      return;
+    }
+
+    const resultado = await ClientesService.registroCompleto({
+      nombre, correo, documento_id, telefono, direccion, fecha_nacimiento, empleado_id,
+    });
+
+    res.status(201).json({ success: true, data: resultado });
+  } catch (error: any) {
+    console.error("Error en registro completo de cliente:", error);
+    res.status(400).json({ success: false, error: error.message || "Error al registrar cliente" });
+  }
+});
+
+/**
  * POST /api/clientes
  */
 router.post("/", authMiddleware, async (req: Request, res: Response) => {
