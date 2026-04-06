@@ -5,33 +5,26 @@
 import { sql } from "../lib/db.js";
 
 export class HistorialVacunacionService {
-  static async findAll(animal_id: string | null) {
-    if (animal_id) {
-      return await sql`
-        SELECT hv.*, a.nombre as animal_nombre, v.nombre as vacuna_nombre,
-               v.intervalo_meses, u.nombre as veterinario_nombre, e.nombre_especie
-        FROM historial_vacunacion hv
-        LEFT JOIN animales a ON hv.animal_id = a.animal_id
-        LEFT JOIN vacunas v ON hv.vacuna_id = v.vacuna_id
-        LEFT JOIN especies e ON v.especie_id = e.especie_id
-        LEFT JOIN veterinarios vet ON hv.veterinario_id = vet.veterinario_id
-        LEFT JOIN usuarios u ON vet.usuario_id = u.usuario_id
-        WHERE hv.animal_id = ${animal_id}
-        ORDER BY hv.fecha_vacunacion DESC
-      `;
-    } else {
-      return await sql`
-        SELECT hv.*, a.nombre as animal_nombre, v.nombre as vacuna_nombre,
-               v.intervalo_meses, u.nombre as veterinario_nombre, e.nombre_especie
-        FROM historial_vacunacion hv
-        LEFT JOIN animales a ON hv.animal_id = a.animal_id
-        LEFT JOIN vacunas v ON hv.vacuna_id = v.vacuna_id
-        LEFT JOIN especies e ON v.especie_id = e.especie_id
-        LEFT JOIN veterinarios vet ON hv.veterinario_id = vet.veterinario_id
-        LEFT JOIN usuarios u ON vet.usuario_id = u.usuario_id
-        ORDER BY hv.fecha_vacunacion DESC
-      `;
-    }
+  static async findAll(filters: {
+    animal_id?: string | null;
+    veterinario_id?: string | null;
+    cliente_id?: number | null;
+  }) {
+    return await sql`
+      SELECT hv.*, a.nombre as animal_nombre, v.nombre as vacuna_nombre,
+             v.intervalo_meses, u.nombre as veterinario_nombre, e.nombre_especie
+      FROM historial_vacunacion hv
+      LEFT JOIN animales a ON hv.animal_id = a.animal_id
+      LEFT JOIN clientes cl ON a.cliente_id = cl.cliente_id
+      LEFT JOIN vacunas v ON hv.vacuna_id = v.vacuna_id
+      LEFT JOIN especies e ON v.especie_id = e.especie_id
+      LEFT JOIN veterinarios vet ON hv.veterinario_id = vet.veterinario_id
+      LEFT JOIN usuarios u ON vet.usuario_id = u.usuario_id
+      WHERE (${filters.animal_id}::int IS NULL OR hv.animal_id = ${filters.animal_id}::int)
+        AND (${filters.veterinario_id}::int IS NULL OR hv.veterinario_id = ${filters.veterinario_id}::int)
+        AND (${filters.cliente_id ?? null}::int IS NULL OR a.cliente_id = ${filters.cliente_id ?? null}::int)
+      ORDER BY hv.fecha_vacunacion DESC
+    `;
   }
 
   static async findById(id: string) {

@@ -13,9 +13,10 @@ const router = Router();
  */
 router.get("/", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { veterinario_id, estado_id, fecha_inicio, fecha_fin } = req.query;
+    const { veterinario_id, cliente_id, estado_id, fecha_inicio, fecha_fin } = req.query;
     const citas = await CitasService.findAll({
       veterinario_id: (veterinario_id as string) || null,
+      cliente_id: cliente_id ? Number(cliente_id) : null,
       estado_id: (estado_id as string) || null,
       fecha_inicio: (fecha_inicio as string) || null,
       fecha_fin: (fecha_fin as string) || null,

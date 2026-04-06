@@ -10,10 +10,11 @@ const router = Router();
 
 router.get("/", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { estado_id, animal_id } = req.query;
+    const { estado_id, animal_id, usuario_id } = req.query;
     const solicitudes = await SolicitudesAdopcionService.findAll({
       estado_id: estado_id ? Number(estado_id) : null,
       animal_id: animal_id ? Number(animal_id) : null,
+      usuario_id: usuario_id ? Number(usuario_id) : null,
     });
     res.json({ success: true, data: solicitudes });
   } catch (error) {

@@ -87,4 +87,21 @@ export class UsuariosService {
     `;
     return usuario[0];
   }
+
+   /**
+   * Obtener usuario dueño de un animal
+   * Cadena: animales → clientes.usuario_id → usuarios (FK directo)
+   */
+  static async getUsuarioByAnimal(animalId: number) {
+    const result = await sql`
+      SELECT u.*, r.nombre_rol
+      FROM usuarios u
+      JOIN clientes cl ON cl.usuario_id = u.usuario_id
+      JOIN animales a ON a.cliente_id = cl.cliente_id
+      LEFT JOIN roles_usuario r ON u.rol_id = r.rol_id
+      WHERE a.animal_id = ${animalId}
+        AND u.activo = true
+    `;
+    return result[0] || null;
+  }
 }

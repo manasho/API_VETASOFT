@@ -3,6 +3,7 @@
  */
 
 import { sql } from "../lib/db.js";
+import { PasswordUtil } from "../utils/password.util.js";
 
 export class ClientesService {
   /**
@@ -93,5 +94,84 @@ export class ClientesService {
       RETURNING *
     `;
     return cliente[0] || null;
+  }
+
+  /**
+   * Registro completo: crea Usuario + Cliente en una sola operación.
+   * La contraseña por defecto es el documento_id del cliente (hasheado).
+   * El cliente podrá cambiarla luego desde el app/web.
+   */
+  static async registroCompleto(data: {
+    nombre: string;
+    correo: string;
+    documento_id: string;
+    telefono?: string;
+    direccion?: string;
+    fecha_nacimiento?: string;
+    empleado_id?: number;
+  }) {
+    // Verificar que el correo no esté ya registrado
+    const existeUsuario = await sql`
+      SELECT usuario_id FROM usuarios WHERE correo = ${data.correo}
+    `;
+    if (existeUsuario.length > 0) {
+      throw new Error('El correo ya está registrado en el sistema');
+    }
+
+    // Verificar que el documento_id no esté ya registrado
+    const existeCliente = await sql`
+      SELECT cliente_id FROM clientes WHERE documento_id = ${data.documento_id}
+    `;
+    if (existeCliente.length > 0) {
+      throw new Error('El número de documento ya está registrado');
+    }
+
+    // Hashear el documento_id como contraseña por defecto
+    const contrasenaPorDefecto = await PasswordUtil.hash(data.documento_id);
+
+    // 1. Crear el usuario con rol Cliente (rol_id = 3)
+    const nuevoUsuario = await sql`
+      INSERT INTO usuarios (nombre, correo, contrasena, rol_id, activo)
+      VALUES (
+        ${data.nombre},
+        ${data.correo},
+        ${contrasenaPorDefecto},
+        3,
+        true
+      )
+      RETURNING usuario_id, nombre, correo, rol_id
+    `;
+    const usuario = nuevoUsuario[0];
+
+    // 2. Crear el cliente vinculado al usuario
+    const nuevoCliente = await sql`
+      INSERT INTO clientes (
+        nombre, correo, telefono, direccion,
+        fecha_nacimiento, documento_id, empleado_id, usuario_id
+      ) VALUES (
+        ${data.nombre},
+        ${data.correo},
+        ${data.telefono || null},
+        ${data.direccion || null},
+        ${data.fecha_nacimiento || null},
+        ${data.documento_id},
+        ${data.empleado_id || null},
+        ${usuario.usuario_id}
+      )
+      RETURNING *
+    `;
+    const cliente = nuevoCliente[0];
+
+    return {
+      usuario: {
+        usuario_id: usuario.usuario_id,
+        nombre: usuario.nombre,
+        correo: usuario.correo,
+        rol_id: usuario.rol_id,
+      },
+      cliente,
+      contrasena_inicial: data.documento_id, // Solo para mostrarlo en pantalla una vez
+      mensaje: `Usuario creado. Contraseña inicial: número de documento (${data.documento_id}). Se recomienda cambiarla al primer ingreso.`,
+    };
   }
 }

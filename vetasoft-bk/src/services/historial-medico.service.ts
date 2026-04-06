@@ -8,6 +8,7 @@ export class HistorialMedicoService {
   static async findAll(filters: {
     animal_id?: string | null;
     veterinario_id?: string | null;
+    cliente_id?: number | null;
   }) {
     const historial = await sql`
       SELECT 
@@ -23,6 +24,7 @@ export class HistorialMedicoService {
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
       WHERE (${filters.animal_id}::int IS NULL OR c.animal_id = ${filters.animal_id}::int)
         AND (${filters.veterinario_id}::int IS NULL OR c.veterinario_id = ${filters.veterinario_id}::int)
+        AND (${filters.cliente_id ?? null}::int IS NULL OR a.cliente_id = ${filters.cliente_id ?? null}::int)
       ORDER BY h.fecha_creacion DESC
     `;
     return historial;

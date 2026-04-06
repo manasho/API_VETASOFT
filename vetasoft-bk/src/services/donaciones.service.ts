@@ -5,23 +5,15 @@
 import { sql } from "../lib/db.js";
 
 export class DonacionesService {
-  static async findAll(campana_id: number | null = null) {
-    if (campana_id) {
-      return await sql`
-        SELECT d.*, c.nombre as campana_nombre
-        FROM donaciones d
-        LEFT JOIN campana_donacion c ON d.campana_id = c.campana_id
-        WHERE d.campana_id = ${campana_id}
-        ORDER BY d.fecha_donacion DESC
-      `;
-    } else {
-      return await sql`
-        SELECT d.*, c.nombre as campana_nombre
-        FROM donaciones d
-        LEFT JOIN campana_donacion c ON d.campana_id = c.campana_id
-        ORDER BY d.fecha_donacion DESC
-      `;
-    }
+  static async findAll(campana_id: number | null, usuario_id: number | null) {
+    return await sql`
+      SELECT d.*, c.nombre as campana_nombre
+      FROM donaciones d
+      LEFT JOIN campana_donacion c ON d.campana_id = c.campana_id
+      WHERE (${campana_id}::int IS NULL OR d.campana_id = ${campana_id}::int)
+        AND (${usuario_id}::int IS NULL OR d.usuario_id = ${usuario_id}::int)
+      ORDER BY d.fecha_donacion DESC
+    `;
   }
 
   static async findById(id: number) {
@@ -36,8 +28,8 @@ export class DonacionesService {
 
   static async create(data: any) {
     const result = await sql`
-      INSERT INTO donaciones (campana_id, monto, nombre_donante, correo_donante, telefono_donante, metodo_pago, numero_transaccion, observaciones, anonimo)
-      VALUES (${data.campana_id}, ${data.monto}, ${data.nombre_donante}, 
+      INSERT INTO donaciones (campana_id, usuario_id, monto, nombre_donante, correo_donante, telefono_donante, metodo_pago, numero_transaccion, observaciones, anonimo)
+      VALUES (${data.campana_id}, ${data.usuario_id || null}, ${data.monto}, ${data.nombre_donante}, 
               ${data.correo_donante || null}, ${data.telefono_donante || null},
               ${data.metodo_pago || null}, ${data.numero_transaccion || null},
               ${data.observaciones || null}, ${data.anonimo || false})

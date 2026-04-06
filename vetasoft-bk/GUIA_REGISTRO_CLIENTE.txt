@@ -1,0 +1,238 @@
+================================================================
+ VETASOFT - GUIA: FLUJO DE REGISTRO DE CLIENTE Y ANIMAL
+================================================================
+Fecha: Abril 2026
+Base URL: http://localhost:4000/api
+
+
+================================================================
+ CONCEPTO GENERAL
+================================================================
+
+Cuando un nuevo cliente llega a la veterinaria, el sistema
+necesita crear 3 registros en este orden exacto:
+
+  1. USUARIO    → cuenta de acceso al sistema (login)
+  2. CLIENTE    → datos del dueño de la mascota
+  3. ANIMAL     → datos de la mascota
+
+Cada paso devuelve un ID que se usa en el siguiente paso.
+
+  usuario_id  ──────────────────────────► clientes.usuario_id
+  cliente_id  ──────────────────────────► animales.cliente_id
+
+
+================================================================
+ PASO 1: CREAR USUARIO
+================================================================
+
+Endpoint : POST /api/usuarios
+Quién lo hace: Admin o Recepcionista
+
+Body (JSON):
+  {
+    "nombre":     "Juan Pérez",
+    "correo":     "juan@email.com",
+    "contrasena": "password123",
+    "rol_id":     3
+  }
+
+Roles disponibles:
+  1 = Admin fundacion
+  2 = Administrador
+  3 = Cliente          ← usar este para dueños de mascotas
+  4 = Director medico
+  5 = Medico tratante
+  6 = Auxiliar veterinario
+
+Respuesta esperada:
+  {
+    "usuario_id": 25,
+    "nombre": "Juan Pérez",
+    "correo": "juan@email.com",
+    "rol_id": 3,
+    "activo": true
+  }
+
+► GUARDAR el campo "usuario_id" para el Paso 2.
+
+
+================================================================
+ PASO 2: CREAR CLIENTE
+================================================================
+
+Endpoint : POST /api/clientes
+Quién lo hace: Admin o Recepcionista
+
+Body (JSON):
+  {
+    "nombre":          "Juan Pérez",
+    "correo":          "juan@email.com",
+    "telefono":        "3001234567",
+    "direccion":       "Calle 123 #45-67",
+    "documento_id":    "123456789",
+    "fecha_nacimiento":"1990-05-15",
+    "usuario_id":      25
+  }
+                       ↑
+                 ID obtenido en el Paso 1
+
+Campos obligatorios: nombre, documento_id, usuario_id
+Campos opcionales  : correo, telefono, direccion, fecha_nacimiento
+
+Respuesta esperada:
+  {
+    "cliente_id": 17,
+    "nombre":     "Juan Pérez",
+    "usuario_id": 25,
+    ...
+  }
+
+► GUARDAR el campo "cliente_id" para el Paso 3.
+
+
+================================================================
+ PASO 3: CREAR ANIMAL / MASCOTA
+================================================================
+
+Endpoint : POST /api/animales
+Quién lo hace: Admin o Recepcionista
+
+Body (JSON):
+  {
+    "nombre":          "Max",
+    "cliente_id":      17,
+    "raza_id":         1,
+    "edad":            2,
+    "peso":            5.50,
+    "sexo":            "Macho",
+    "descripcion":     "Perro juguetón y amigable",
+    "fecha_nacimiento":"2024-01-10",
+    "numero_chip":     "123ABC456"
+  }
+                 ↑
+           ID obtenido en el Paso 2
+
+Campos obligatorios: nombre, cliente_id, raza_id, edad, peso, sexo, descripcion
+Campos opcionales  : fecha_nacimiento, numero_chip
+
+Valores para "sexo":
+  "Macho" o "Hembra"
+
+Valores para "estado" (opcional):
+  "Animales"      ← default (mascota normal)
+  "En adopción"
+  "Adoptado"
+
+Respuesta esperada:
+  {
+    "animal_id": 5,
+    "nombre":    "Max",
+    "cliente_id": 17,
+    ...
+  }
+
+
+================================================================
+ RESUMEN DEL FLUJO COMPLETO
+================================================================
+
+  [Formulario Frontend]
+       |
+       | POST /api/usuarios
+       ▼
+  usuario_id = 25
+       |
+       | POST /api/clientes  (con usuario_id: 25)
+       ▼
+  cliente_id = 17
+       |
+       | POST /api/animales  (con cliente_id: 17)
+       ▼
+  animal_id = 5
+       |
+       ▼
+  [Registro completo ✓]
+
+
+================================================================
+ CONSULTAR RAZAS DISPONIBLES
+================================================================
+
+Antes de crear el animal necesitas saber el raza_id.
+Consulta la lista así:
+
+  GET /api/razas
+
+  Respuesta (ejemplo):
+  [
+    { "raza_id": 1, "nombre_raza": "Mestizo",   "nombre_especie": "Perro" },
+    { "raza_id": 2, "nombre_raza": "Labrador",   "nombre_especie": "Perro" },
+    { "raza_id": 11,"nombre_raza": "Mestizo",   "nombre_especie": "Gato"  },
+    ...
+  ]
+
+También puedes consultar solo especies:
+  GET /api/especies
+
+
+================================================================
+ FLUJO PARA EL FRONTEND (RECOMENDADO)
+================================================================
+
+Opcion A - 3 pantallas separadas:
+  Pantalla 1: Formulario usuario  → guardar usuario_id
+  Pantalla 2: Formulario cliente  → guardar cliente_id
+  Pantalla 3: Formulario animal   → fin
+
+Opcion B - 1 formulario en pasos (wizard/stepper):
+  Un solo formulario con 3 secciones.
+  Al hacer click en "Guardar", el frontend hace las 3
+  llamadas en secuencia automáticamente.
+  Si alguna falla, mostrar error y no continuar.
+
+Opcion C - Endpoint unificado (pendiente):
+  Un solo POST que crea usuario + cliente + animal
+  en una transaccion SQL (con rollback si falla algo).
+  Mas robusto para produccion.
+
+
+================================================================
+ VERIFICAR RESULTADO EN NEON DB
+================================================================
+
+Una vez creado todo puedes verificar con este SQL en Neon:
+
+  SELECT
+    u.usuario_id,
+    u.nombre    AS usuario_nombre,
+    u.correo,
+    cl.cliente_id,
+    cl.nombre   AS cliente_nombre,
+    a.animal_id,
+    a.nombre    AS animal_nombre
+  FROM usuarios u
+  JOIN clientes cl ON cl.usuario_id = u.usuario_id
+  JOIN animales a  ON a.cliente_id  = cl.cliente_id
+  ORDER BY u.usuario_id DESC
+  LIMIT 10;
+
+
+================================================================
+ NOTAS IMPORTANTES
+================================================================
+
+- Si el cliente NO va a tener acceso al sistema (no hace login),
+  el campo usuario_id en clientes puede ser NULL.
+  En ese caso omitir el Paso 1 y no enviar usuario_id en Paso 2.
+
+- El correo del usuario y del cliente NO tiene que ser el mismo,
+  aunque se recomienda que lo sea para consistencia.
+
+- El campo "contrasena" en usuarios sera usado por el cliente
+  para hacer login en el portal web.
+
+- Las notificaciones del cronjob solo llegan si el cliente
+  tiene usuario_id vinculado en la tabla clientes.
+
+================================================================

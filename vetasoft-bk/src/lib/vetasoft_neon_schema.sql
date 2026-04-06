@@ -49,13 +49,16 @@ CREATE TABLE clientes (
   documento_id     VARCHAR(50) NOT NULL UNIQUE,
   fecha_registro   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   activo           BOOLEAN DEFAULT TRUE,
-  empleado_id      INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL
+  empleado_id      INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL,
+  usuario_id       INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL  -- cuenta de acceso del cliente (agregado 2026-04-03)
 );
 
 CREATE INDEX idx_clientes_empleado   ON clientes(empleado_id);
 CREATE INDEX idx_clientes_documento  ON clientes(documento_id);
 CREATE INDEX idx_clientes_activo     ON clientes(activo);
 CREATE INDEX idx_clientes_nombre     ON clientes(nombre);
+CREATE INDEX idx_clientes_usuario    ON clientes(usuario_id);  -- agregado 2026-04-03
+
 
 -- ─────────────────────────────────────────────────────────────
 -- 4. ESPECIES
@@ -219,6 +222,7 @@ CREATE INDEX idx_campana_creado_por  ON campana_donacion(creado_por);
 CREATE TABLE donaciones (
   donacion_id         SERIAL PRIMARY KEY,
   campana_id          INT NOT NULL REFERENCES campana_donacion(campana_id) ON DELETE RESTRICT,
+  usuario_id          INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL,
   nombre_donante      VARCHAR(50) NOT NULL,
   correo_donante      VARCHAR(100),
   telefono_donante    VARCHAR(20),
@@ -231,6 +235,7 @@ CREATE TABLE donaciones (
 );
 
 CREATE INDEX idx_donaciones_campana  ON donaciones(campana_id);
+CREATE INDEX idx_donaciones_usuario  ON donaciones(usuario_id);
 CREATE INDEX idx_donaciones_fecha    ON donaciones(fecha_donacion);
 CREATE INDEX idx_donaciones_donante  ON donaciones(nombre_donante);
 
@@ -250,6 +255,7 @@ CREATE TABLE estado_adopcion (
 CREATE TABLE solicitudes_adopcion (
   solicitud_id           SERIAL PRIMARY KEY,
   animal_id              INT NOT NULL REFERENCES animales(animal_id) ON DELETE RESTRICT,
+  usuario_id             INT REFERENCES usuarios(usuario_id) ON DELETE SET NULL,  -- dueño de la solicitud
   nombre_solicitante     VARCHAR(50) NOT NULL,
   correo_solicitante     VARCHAR(100) NOT NULL,
   telefono_solicitante   VARCHAR(20) NOT NULL,
@@ -264,6 +270,7 @@ CREATE TABLE solicitudes_adopcion (
 );
 
 CREATE INDEX idx_solicitudes_animal         ON solicitudes_adopcion(animal_id);
+CREATE INDEX idx_solicitudes_usuario        ON solicitudes_adopcion(usuario_id);
 CREATE INDEX idx_solicitudes_estado         ON solicitudes_adopcion(estado_id);
 CREATE INDEX idx_solicitudes_fecha          ON solicitudes_adopcion(fecha_solicitud);
 CREATE INDEX idx_solicitudes_respondido_por ON solicitudes_adopcion(respondido_por);

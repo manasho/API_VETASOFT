@@ -31,6 +31,7 @@ import catalogosRoutes from "./routes/catalogos.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 import modulosRoutes from "./routes/modulos.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
+import testRoutes from "./routes/test.routes.js"; // Solo desarrollo
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -92,6 +93,9 @@ app.use("/api/modulos", modulosRoutes);
 
 // Notificaciones (campana)
 app.use("/api/notificaciones", notificacionesRoutes);
+
+// ⚠️ Solo desarrollo — ejecutar tareas manualmente
+app.use("/api/test", testRoutes);
 
 // Ruta raíz - Documentación de la API
 app.get("/", (req, res) => {

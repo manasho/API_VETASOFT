@@ -10,6 +10,7 @@ export class CitasService {
    */
   static async findAll(filters: {
     veterinario_id?: string | null;
+    cliente_id?: number | null;
     estado_id?: string | null;
     fecha_inicio?: string | null;
     fecha_fin?: string | null;
@@ -29,6 +30,7 @@ export class CitasService {
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
       LEFT JOIN estado_citas ec ON c.estado_id = ec.estado_id
       WHERE (${filters.veterinario_id}::int IS NULL OR c.veterinario_id = ${filters.veterinario_id}::int)
+        AND (${filters.cliente_id ?? null}::int IS NULL OR a.cliente_id = ${filters.cliente_id ?? null}::int)
         AND (${filters.estado_id}::int IS NULL OR c.estado_id = ${filters.estado_id}::int)
         AND (${filters.fecha_inicio}::date IS NULL OR c.fecha_cita >= ${filters.fecha_inicio}::date)
         AND (${filters.fecha_fin}::date IS NULL OR c.fecha_cita <= ${filters.fecha_fin}::date)
@@ -117,4 +119,31 @@ export class CitasService {
     `;
     return cancelledCita.length > 0 ? cancelledCita[0] : null;
   }
+
+  /**
+ * Obtener citas para mañana
+ */
+static async getCitasManana() {
+  const citas = await sql`
+    SELECT 
+      c.cita_id,
+      c.animal_id,
+      c.fecha_cita,
+      c.motivo,
+      a.nombre as animal_nombre,
+      cl.nombre as cliente_nombre,
+      cl.telefono as cliente_telefono,
+      u.nombre as veterinario_nombre,
+      v.usuario_id as veterinario_usuario_id
+    FROM citas c
+    JOIN animales a ON c.animal_id = a.animal_id
+    JOIN clientes cl ON a.cliente_id = cl.cliente_id
+    JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
+    JOIN usuarios u ON v.usuario_id = u.usuario_id
+    WHERE c.fecha_cita::date = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota' + INTERVAL '1 day')::date
+      AND c.estado_id = 1
+    ORDER BY c.fecha_cita
+  `;
+  return citas;
+}
 }
