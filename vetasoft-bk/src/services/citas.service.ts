@@ -10,6 +10,7 @@ export class CitasService {
    */
   static async findAll(filters: {
     veterinario_id?: string | null;
+    cliente_id?: number | null;
     estado_id?: string | null;
     fecha_inicio?: string | null;
     fecha_fin?: string | null;
@@ -29,6 +30,7 @@ export class CitasService {
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
       LEFT JOIN estado_citas ec ON c.estado_id = ec.estado_id
       WHERE (${filters.veterinario_id}::int IS NULL OR c.veterinario_id = ${filters.veterinario_id}::int)
+        AND (${filters.cliente_id ?? null}::int IS NULL OR a.cliente_id = ${filters.cliente_id ?? null}::int)
         AND (${filters.estado_id}::int IS NULL OR c.estado_id = ${filters.estado_id}::int)
         AND (${filters.fecha_inicio}::date IS NULL OR c.fecha_cita >= ${filters.fecha_inicio}::date)
         AND (${filters.fecha_fin}::date IS NULL OR c.fecha_cita <= ${filters.fecha_fin}::date)

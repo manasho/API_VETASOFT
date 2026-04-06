@@ -10,9 +10,13 @@ const router = Router();
 
 router.get("/", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { campana_id } = req.query;
+    const { campana_id, usuario_id } = req.query;
+    console.log("================= RADAR BACKEND =================");
+    console.log("QUERY RECIBIDO EN DONACIONES:", req.query);
+    console.log("=================================================");
     const donaciones = await DonacionesService.findAll(
-      campana_id ? Number(campana_id) : null
+      campana_id ? Number(campana_id) : null,
+      usuario_id ? Number(usuario_id) : null
     );
     res.json({ success: true, data: donaciones });
   } catch (error) {
@@ -33,7 +37,7 @@ router.get("/:id", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-router.post("/", authMiddleware, async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const donacion = await DonacionesService.create(req.body);
     res.status(201).json({ success: true, data: donacion });

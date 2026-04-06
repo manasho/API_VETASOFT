@@ -8,6 +8,7 @@ export class SolicitudesAdopcionService {
   static async findAll(filters: {
     estado_id?: number | null;
     animal_id?: number | null;
+    usuario_id?: number | null;
   }) {
     const solicitudes = await sql`
       SELECT s.*, a.nombre as animal_nombre, a.edad as animal_edad,
@@ -20,6 +21,7 @@ export class SolicitudesAdopcionService {
       LEFT JOIN usuarios u ON s.respondido_por = u.usuario_id
       WHERE (${filters.estado_id}::int IS NULL OR s.estado_id = ${filters.estado_id}::int)
         AND (${filters.animal_id}::int IS NULL OR s.animal_id = ${filters.animal_id}::int)
+        AND (${filters.usuario_id}::int IS NULL OR s.usuario_id = ${filters.usuario_id}::int)
       ORDER BY s.fecha_solicitud DESC
     `;
     return solicitudes;
@@ -43,14 +45,14 @@ export class SolicitudesAdopcionService {
   static async create(data: any) {
     const result = await sql`
       INSERT INTO solicitudes_adopcion (animal_id, nombre_solicitante, correo_solicitante, 
-        telefono_solicitante, direccion_solicitante, experiencia_animales, motivo, estado_id)
+        telefono_solicitante, direccion_solicitante, experiencia_animales, motivo, estado_id, usuario_id)
       VALUES (${data.animal_id}, ${data.nombre_solicitante}, ${
       data.correo_solicitante
     },
         ${data.telefono_solicitante}, ${data.direccion_solicitante}, ${
       data.experiencia_animales
     }, 
-        ${data.motivo}, ${data.estado_id || 1})
+        ${data.motivo}, ${data.estado_id || 1}, ${data.usuario_id || null})
       RETURNING *
     `;
     return result[0];

@@ -41,6 +41,32 @@ export class AuthService {
       return { success: false, message: "Credenciales inválidas" };
     }
 
+    // Si es cliente (rol 3), obtener su cliente_id
+    let clienteId: number | null = null;
+    if (usuario.rol_id === 3) {
+      const clienteRows = await sql`
+        SELECT cliente_id FROM clientes
+        WHERE usuario_id = ${usuario.usuario_id} AND activo = true
+        LIMIT 1
+      `;
+      if (clienteRows.length > 0) {
+        clienteId = clienteRows[0].cliente_id as number;
+      }
+    }
+
+    // Si es médico tratante (rol 5) o auxiliar (rol 6), obtener su veterinario_id
+    let veterinarioId: number | null = null;
+    if (usuario.rol_id === 5 || usuario.rol_id === 6) {
+      const vetRows = await sql`
+        SELECT veterinario_id FROM veterinarios
+        WHERE usuario_id = ${usuario.usuario_id} AND activo = true
+        LIMIT 1
+      `;
+      if (vetRows.length > 0) {
+        veterinarioId = vetRows[0].veterinario_id as number;
+      }
+    }
+
     const payload: JwtPayload = {
       userId: usuario.usuario_id as number,
       email: usuario.correo as string,
@@ -54,7 +80,14 @@ export class AuthService {
 
     return {
       success: true,
-      data: { user: usuarioSinPassword, token },
+      data: {
+        user: {
+          ...usuarioSinPassword,
+          cliente_id: clienteId,
+          veterinario_id: veterinarioId,
+        },
+        token,
+      },
     };
   }
 

@@ -10,10 +10,12 @@ const router = Router();
 
 router.get("/", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { animal_id } = req.query;
-    const historial = await HistorialVacunacionService.findAll(
-      (animal_id as string) || null
-    );
+    const { animal_id, veterinario_id, cliente_id } = req.query;
+    const historial = await HistorialVacunacionService.findAll({
+      animal_id: (animal_id as string) || null,
+      veterinario_id: (veterinario_id as string) || null,
+      cliente_id: cliente_id ? Number(cliente_id) : null
+    });
     res.json({ success: true, data: historial });
   } catch (error) {
     res
