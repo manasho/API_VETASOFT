@@ -92,4 +92,14 @@ router.delete("/:id", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+router.get("/hoy/:id", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const citas = await CitasService.getCitasHoy(Number(req.params.id));
+    res.json({ success: true, data: citas });
+  } catch (error) {
+    console.error("Error obteniendo citas de hoy:", error);
+    res.status(500).json({ success: false, error: "Error al obtener citas de hoy" });
+  }
+});
+
 export default router;

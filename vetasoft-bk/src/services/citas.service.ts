@@ -145,5 +145,30 @@ static async getCitasManana() {
     ORDER BY c.fecha_cita
   `;
   return citas;
+
+}
+static async getCitasHoy(id: number) {
+  const citas = await sql`
+    SELECT 
+      c.cita_id,
+      c.animal_id,
+      c.fecha_cita,
+      c.motivo,
+      a.nombre as animal_nombre,
+      cl.nombre as cliente_nombre,
+      cl.telefono as cliente_telefono,
+      u.nombre as veterinario_nombre,
+      v.usuario_id as veterinario_usuario_id
+    FROM citas c
+    JOIN animales a ON c.animal_id = a.animal_id
+    JOIN clientes cl ON a.cliente_id = cl.cliente_id
+    JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
+    JOIN usuarios u ON v.usuario_id = u.usuario_id
+    WHERE c.fecha_cita::date = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota')::date
+      AND c.estado_id = 1
+      AND u.usuario_id = ${id}
+    ORDER BY c.fecha_cita
+  `;
+  return citas;
 }
 }

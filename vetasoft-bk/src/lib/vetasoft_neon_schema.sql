@@ -89,11 +89,11 @@ CREATE INDEX idx_razas_nombre  ON razas(nombre_raza);
 -- 6. ANIMALES / MASCOTAS
 -- ─────────────────────────────────────────────────────────────
 CREATE TYPE sexo_animal   AS ENUM ('Macho', 'Hembra');
-CREATE TYPE estado_animal AS ENUM ('Animales', 'Adoptado', 'En adopción');
+CREATE TYPE estado_animal AS ENUM ('Con dueño', 'Adoptado', 'En adopción');
 
 CREATE TABLE animales (
   animal_id       SERIAL PRIMARY KEY,
-  cliente_id      INT NOT NULL REFERENCES clientes(cliente_id) ON DELETE RESTRICT,
+  cliente_id      INT REFERENCES clientes(cliente_id) ON DELETE RESTRICT,
   nombre          VARCHAR(50) NOT NULL,
   raza_id         INT NOT NULL REFERENCES razas(raza_id) ON DELETE RESTRICT,
   edad            SMALLINT NOT NULL CHECK (edad BETWEEN 0 AND 150),
@@ -102,7 +102,8 @@ CREATE TABLE animales (
   sexo            sexo_animal NOT NULL,
   descripcion     TEXT NOT NULL,
   numero_chip     VARCHAR(50),
-  estado          estado_animal DEFAULT 'Animales',
+  estado          estado_animal DEFAULT 'Con dueño',
+  foto            TEXT,
   activo          BOOLEAN DEFAULT TRUE,
   fecha_ingreso   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
