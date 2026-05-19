@@ -134,4 +134,23 @@ export class AnimalesService {
     `;
     return result[0] || null;
   }
+
+  static async findAnimalAdopcion(){
+    const animales = await sql`
+      SELECT 
+        a.*,
+        c.nombre as cliente_nombre,
+        c.telefono as cliente_telefono,
+        c.correo as cliente_correo,
+        r.nombre_raza,
+        e.nombre_especie
+      FROM animales a
+      LEFT JOIN clientes c ON a.cliente_id = c.cliente_id
+      LEFT JOIN razas r ON a.raza_id = r.raza_id
+      LEFT JOIN especies e ON r.especie_id = e.especie_id
+      WHERE a.estado = 'En adopción'
+      ORDER BY a.fecha_ingreso DESC
+    `;
+    return animales;
+  }
 }

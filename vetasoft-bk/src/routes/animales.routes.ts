@@ -28,6 +28,19 @@ router.get("/", authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/animales/adopcion
+ */
+router.get("/adopcion", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const animales = await AnimalesService.findAnimalAdopcion();
+    res.json({ success: true, data: animales });
+  } catch (error) {
+    console.error("Error obteniendo animales:", error);
+    res.status(500).json({ success: false, error: "Error al obtener animales" });
+  }
+});
+
+/**
  * GET /api/animales/:id
  */
 router.get("/:id", authMiddleware, async (req: Request, res: Response) => {
