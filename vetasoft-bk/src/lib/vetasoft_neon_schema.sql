@@ -89,11 +89,11 @@ CREATE INDEX idx_razas_nombre  ON razas(nombre_raza);
 -- 6. ANIMALES / MASCOTAS
 -- ─────────────────────────────────────────────────────────────
 CREATE TYPE sexo_animal   AS ENUM ('Macho', 'Hembra');
-CREATE TYPE estado_animal AS ENUM ('Animales', 'Adoptado', 'En adopción');
+CREATE TYPE estado_animal AS ENUM ('Con dueño', 'Adoptado', 'En adopción');
 
 CREATE TABLE animales (
   animal_id       SERIAL PRIMARY KEY,
-  cliente_id      INT NOT NULL REFERENCES clientes(cliente_id) ON DELETE RESTRICT,
+  cliente_id      INT REFERENCES clientes(cliente_id) ON DELETE RESTRICT,
   nombre          VARCHAR(50) NOT NULL,
   raza_id         INT NOT NULL REFERENCES razas(raza_id) ON DELETE RESTRICT,
   edad            SMALLINT NOT NULL CHECK (edad BETWEEN 0 AND 150),
@@ -102,7 +102,8 @@ CREATE TABLE animales (
   sexo            sexo_animal NOT NULL,
   descripcion     TEXT NOT NULL,
   numero_chip     VARCHAR(50),
-  estado          estado_animal DEFAULT 'Animales',
+  estado          estado_animal DEFAULT 'Con dueño',
+  foto            TEXT,
   activo          BOOLEAN DEFAULT TRUE,
   fecha_ingreso   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -145,22 +146,24 @@ CREATE TABLE estado_citas (
 -- 9. CITAS
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE citas (
-  cita_id        SERIAL PRIMARY KEY,
-  animal_id      INT NOT NULL REFERENCES animales(animal_id) ON DELETE RESTRICT,
-  veterinario_id INT NOT NULL REFERENCES veterinarios(veterinario_id) ON DELETE RESTRICT,
-  fecha_cita     TIMESTAMP NOT NULL,
-  motivo         TEXT,
-  estado_id      INT NOT NULL REFERENCES estado_citas(estado_id) ON DELETE RESTRICT,
-  observaciones  TEXT,
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  creado_por     INT NOT NULL REFERENCES usuarios(usuario_id) ON DELETE RESTRICT
+  cita_id          SERIAL PRIMARY KEY,
+  animal_id        INT NOT NULL REFERENCES animales(animal_id) ON DELETE RESTRICT,
+  veterinario_id   INT NOT NULL REFERENCES veterinarios(veterinario_id) ON DELETE RESTRICT,
+  tipo_consulta_id INT REFERENCES tipo_consulta(tipo_consulta_id) ON DELETE RESTRICT,
+  fecha_cita       TIMESTAMP NOT NULL,
+  motivo           TEXT,
+  estado_id        INT NOT NULL REFERENCES estado_citas(estado_id) ON DELETE RESTRICT,
+  observaciones    TEXT,
+  fecha_creacion   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  creado_por       INT NOT NULL REFERENCES usuarios(usuario_id) ON DELETE RESTRICT
 );
 
-CREATE INDEX idx_citas_animal       ON citas(animal_id);
-CREATE INDEX idx_citas_veterinario  ON citas(veterinario_id);
-CREATE INDEX idx_citas_fecha        ON citas(fecha_cita);
-CREATE INDEX idx_citas_estado       ON citas(estado_id);
-CREATE INDEX idx_citas_creado_por   ON citas(creado_por);
+CREATE INDEX idx_citas_animal         ON citas(animal_id);
+CREATE INDEX idx_citas_veterinario    ON citas(veterinario_id);
+CREATE INDEX idx_citas_tipo_consulta  ON citas(tipo_consulta_id);
+CREATE INDEX idx_citas_fecha          ON citas(fecha_cita);
+CREATE INDEX idx_citas_estado         ON citas(estado_id);
+CREATE INDEX idx_citas_creado_por     ON citas(creado_por);
 
 -- ─────────────────────────────────────────────────────────────
 -- 10. TIPO DE CONSULTA

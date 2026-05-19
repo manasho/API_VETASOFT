@@ -8,7 +8,7 @@
 // ============================================
 
 export type SexoAnimal = "Macho" | "Hembra";
-export type EstadoAnimal = "Activo" | "Adoptado" | "En adopcion";
+export type EstadoAnimal = "Con dueño" | "Adoptado" | "En adopcion";
 
 // ============================================
 // USER MANAGEMENT
@@ -78,7 +78,7 @@ export interface Raza {
 
 export interface Animal {
   animal_id: number;
-  cliente_id: number;
+  cliente_id?: number;
   nombre: string;
   raza_id: number;
   edad: number;
@@ -88,6 +88,7 @@ export interface Animal {
   descripcion: string;
   numero_chip?: string;
   estado: EstadoAnimal;
+  foto?: string;
   fecha_ingreso: Date;
   activo: boolean;
 }
