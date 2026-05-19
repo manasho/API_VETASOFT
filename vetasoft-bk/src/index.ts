@@ -1,5 +1,5 @@
 /**
- * VetaSoft Backend - Express.js
+ * VetaSoft Backend - Express.jsw
  * Punto de entrada principal del servidor
  *
  * Migrado desde Next.js API Routes
@@ -40,11 +40,7 @@ const PORT = process.env.PORT || 4000;
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5173",
-    ],
+    origin: true,
     credentials: true,
   })
 );
@@ -168,32 +164,8 @@ app.use((req, res) => {
 // INICIAR SERVIDOR
 // ============================================
 
-app.listen(PORT, () => {
-  console.log(`
-  🐾 VetaSoft API v1.0 - Express.js
-  ================================
-  
-  Servidor corriendo en: http://localhost:${PORT}
-  
-  📌 Endpoints principales:
-     POST /api/auth/login
-     POST /api/auth/register
-     GET  /api/usuarios
-     GET  /api/clientes
-     GET  /api/animales
-     GET  /api/veterinarios
-     GET  /api/citas
-     GET  /api/especies
-     GET  /api/razas
-     GET  /api/vacunas
-     GET  /api/campanas
-     GET  /api/catalogo/roles
-     GET  /api/donaciones
-     GET  /api/solicitudes-adopcion
-     GET  /api/health
-     
-  📖 Documentación: http://localhost:${PORT}
-  `);
+app.listen(Number(PORT), "0.0.0.0", () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
 
 export default app;
