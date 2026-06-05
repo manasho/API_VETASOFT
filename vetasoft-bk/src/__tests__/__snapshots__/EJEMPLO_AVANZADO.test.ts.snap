@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SnapshotTesting debería hacer snapshot de objeto complejo 1`] = `
+{
+  "createdAt": 2024-01-01T00:00:00.000Z,
+  "email": "juan@example.com",
+  "id": 1,
+  "nombre": "Juan",
+}
+`;
+
+exports[`SnapshotTesting debería hacer snapshot de objeto complejo 2`] = `
+{
+  "email": "juan@example.com",
+  "nombre": "Juan",
+}
+`;
