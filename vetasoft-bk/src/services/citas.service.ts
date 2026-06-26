@@ -22,12 +22,15 @@ export class CitasService {
         cl.nombre as cliente_nombre,
         cl.telefono as cliente_telefono,
         u.nombre as veterinario_nombre,
-        ec.estado_nombre
+        ec.estado_nombre,
+        tc.nombre as tipo_consulta_nombre,
+        tc.nombre as nombre
       FROM citas c
       LEFT JOIN animales a ON c.animal_id = a.animal_id
       LEFT JOIN clientes cl ON a.cliente_id = cl.cliente_id
       LEFT JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
+      LEFT JOIN tipo_consulta tc ON c.tipo_consulta_id = tc.tipo_consulta_id
       LEFT JOIN estado_citas ec ON c.estado_id = ec.estado_id
       WHERE (${filters.veterinario_id}::int IS NULL OR c.veterinario_id = ${filters.veterinario_id}::int)
         AND (${filters.cliente_id ?? null}::int IS NULL OR a.cliente_id = ${filters.cliente_id ?? null}::int)
@@ -54,6 +57,8 @@ export class CitasService {
         cl.correo as cliente_correo,
         u.nombre as veterinario_nombre,
         ec.estado_nombre,
+        tc.nombre as tipo_consulta_nombre,
+        tc.nombre as nombre,
         r.nombre_raza,
         e.nombre_especie
       FROM citas c
@@ -63,8 +68,10 @@ export class CitasService {
       LEFT JOIN especies e ON r.especie_id = e.especie_id
       LEFT JOIN veterinarios v ON c.veterinario_id = v.veterinario_id
       LEFT JOIN usuarios u ON v.usuario_id = u.usuario_id
+      LEFT JOIN tipo_consulta tc ON c.tipo_consulta_id = tc.tipo_consulta_id
       LEFT JOIN estado_citas ec ON c.estado_id = ec.estado_id
       WHERE c.cita_id = ${id}
+        AND ec.estado_id != 5
     `;
     return cita.length > 0 ? cita[0] : null;
   }
@@ -76,7 +83,7 @@ export class CitasService {
     const result = await sql`
       INSERT INTO citas (
         animal_id, veterinario_id, fecha_cita,
-        motivo, estado_id, observaciones, fecha_creacion, creado_por
+        motivo, estado_id, observaciones, fecha_creacion, creado_por, tipo_consulta_id
       ) VALUES (
         ${data.animal_id}, 
         ${data.veterinario_id}, 
@@ -85,7 +92,8 @@ export class CitasService {
         ${data.estado_id}, 
         ${data.observaciones || null}, 
         NOW(),
-        ${data.creado_por}
+        ${data.creado_por || null},
+        ${data.tipo_consulta_id || null}
       ) RETURNING *
     `;
     return result.length > 0 ? result[0] : null;
@@ -100,6 +108,7 @@ export class CitasService {
         fecha_cita = COALESCE(${data.fecha_cita}, fecha_cita),
         motivo = COALESCE(${data.motivo}, motivo),
         estado_id = COALESCE(${data.estado_id}, estado_id),
+        tipo_consulta_id = COALESCE(${data.tipo_consulta_id}, tipo_consulta_id),
         observaciones = COALESCE(${data.observaciones}, observaciones)
       WHERE cita_id = ${id}
       RETURNING *
@@ -113,7 +122,8 @@ export class CitasService {
   static async delete(id: number) {
     const cancelledCita = await sql`
       UPDATE citas 
-      SET observaciones = CONCAT(COALESCE(observaciones, ''), ' [CANCELADA]')
+      SET observaciones = CONCAT(COALESCE(observaciones, ''), ' [CANCELADA]'),
+          estado_id = 5
       WHERE cita_id = ${id}
       RETURNING *
     `;
